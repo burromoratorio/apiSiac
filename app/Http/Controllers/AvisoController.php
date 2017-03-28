@@ -8,10 +8,6 @@ use App\Aviso;
 
 class AvisoController extends Controller
 {
-    const ESTADO_PENDIENTE = 1;
-    const ESTADO_ENVIADO = 2;
-    const ESTADO_FALLIDO = 3;
-
     use AvisoTrait;
 
     public function index()
@@ -24,15 +20,15 @@ class AvisoController extends Controller
     }
 
     public function update(Request $request, $id) {
+        $this->validate($request, [
+            'estado_envio_id' => 'required|numeric',
+        ]);
+
         $aviso = Aviso::findOrFail($id);
         $estado = $request->input('estado_envio_id');
-        if ($estado == static::ESTADO_PENDIENTE) {
-            // TODO: terminar reintentos
-            /*$aviso_id = $aviso->id;
-            $subject = $aviso->subject;
-            $body = $aviso->body;
-            $addresses = ;
-            Redis::publish('mails', json_encode(compact('aviso_id', 'subject', 'body', 'addresses')));*/
+        if ($estado == self::$ESTADO_PENDIENTE) {
+            list($subject, $body) = explode(";", $aviso->aviso);
+            $this->fireEvent($subject, $body, $aviso->aviso_cliente_id, $aviso->id);
         }
         $aviso->estado_envio_id = $estado;
         $aviso->save();

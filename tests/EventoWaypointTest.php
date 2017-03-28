@@ -1,14 +1,14 @@
 <?php
 
 use Laravel\Lumen\Testing\DatabaseTransactions;
-use App\Movil;
 
-class CreateEventTest extends TestCase
+class EventoWaypointTest extends TestCase
 {
     use DatabaseTransactions;
 
     public function testInWaypoint()
     {
+        $this->withoutEvents();
         $movil = $this->getMovil();
         $waypoint = $this->getWaypoint();
         $this->post('/eventos', [
@@ -19,11 +19,12 @@ class CreateEventTest extends TestCase
             'dominio' => 'ABC123',
             'timestamp' => 123456,
         ]);
-        $this->assertEquals("OK", $this->response->getContent());
+        $this->assertResponseStatus(201);
     }
 
     public function testOutWaypoint()
     {
+        $this->withoutEvents();
         $movil = $this->getMovil();
         $waypoint = $this->getWaypoint();
         $this->post('/eventos', [
@@ -34,6 +35,6 @@ class CreateEventTest extends TestCase
             'dominio' => 'ABC123',
             'timestamp' => 123456,
         ]);
-        $this->assertEquals("OK", $this->response->getContent());
+        $this->assertResponseStatus(201);
     }
 }
