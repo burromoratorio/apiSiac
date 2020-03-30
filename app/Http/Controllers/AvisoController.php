@@ -12,11 +12,21 @@ class AvisoController extends Controller
 
     public function index()
     {
-        return Aviso::join('estados_envios', 'estados_envios.id', '=', 'avisos.estado_envio_id')
-                    ->join('avisos_clientes', 'avisos_clientes.id', '=', 'avisos.aviso_cliente_id')
-                    ->join('clientes', 'clientes.cliente_id', '=', 'avisos_clientes.cliente_id')
-                    ->select('avisos.id', 'avisos.aviso', 'estados_envios.estado', 'clientes.razon_social')
-                    ->get();
+        $avisos	= Aviso::getAvisos();
+        $av		= array();
+        foreach ($avisos as $aviso){
+		if(!$aviso->avisoCliente){
+			$rz = '';
+		}else{
+			$rz = $aviso->avisoCliente->cliente->razon_social;
+		};
+		$avi	= ['id'=>$aviso->id,'aviso'=>$aviso->aviso,'estado'=>$aviso->estado->estado,'razon_social'=>$rz];
+		$av[]	= $avi;
+
+	}
+	$header	= ['Content-type'=> 'application/json; charset=utf-8'];
+        return response()->json($av,200,$header,JSON_UNESCAPED_UNICODE);          
+       
     }
 
     public function update(Request $request, $id) {
