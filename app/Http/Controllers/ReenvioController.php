@@ -84,8 +84,16 @@ class ReenvioController extends Controller
                        $hostDestino = $reenvio_movil->reenvio_host->destino; 
                        $hostWirtrack= array("arm"=>"190.210.182.161","arm2"=>"190.210.200.196","wirsolut"=>"174.143.201.195","wirsolut2"=>"174.143.201.164","donp"=>"200.55.7.172", "logicTracker"=>"190.104.220.250","sglobal"=>"190.210.189.109","unisolution"=>"190.216.57.166","unisolutionv2"=>"200.69.211.177","linkcargas"=>"168.194.207.130","newSan"=>"200.89.177.100","SBI"=>"52.168.179.14","GLOBAL"=>"52.42.51.164");
                        $hostDhl		= "200.89.128.108";
+                       $hostAval	= [];
                        //$cadena		= ($hostDestino==$hostDhl)?$this->mkDhlString($request->all()):$this->mkCaessatString($request->all());
-                       $cadena		= ($hostDestino==$hostDhl)?$this->mkDhlString($request->all()):$this->mkCaessatString($request->all(),$hostDestino);
+                       //->$cadena		= ($hostDestino==$hostDhl)?$this->mkDhlString($request->all()):$this->mkCaessatString($request->all(),$hostDestino);
+                       if($hostDestino==$hostDhl){
+						   $cadena	= $this->mkDhlString($request->all());
+						}elseif(in_array($hostDestino,$hostAval)){
+							$cadena	= $this->mkAvalString($request->all());
+						}else{
+							$cadna	= $this->mkCaessatString($request->all(),$hostDestino);
+						}
                        foreach($hostWirtrack as $k => $v) {
                           if($hostDestino==$v){
                             $cadena=$this->mkCaessatString17($request->all());
@@ -247,6 +255,23 @@ class ReenvioController extends Controller
         return $cadena;
 		
 	}
+	//{"movil_id":"11849","hora":"1462346654","patente":"LXG508","latitud":"32.949092","longitud":"60.676610",
+    //"velocidad":"0.000000","sentido":"269.120000","posGpsValida":"1","evento":"1","temperatura1":"22","temperatura2":"23","temperatura3":"24"}
+        
+	private function mkAvalString(array $fields){
+		$cadena="$@BYKM,A1,".
+		$this->checkExactLength("fecha", Carbon::createFromTimestamp($fields['hora'])->format('dmyHis'), 12).
+		$this->checkExactLength("latitud", sprintf("%+09.5f", $fields['latitud']), 9).
+        $this->checkExactLength("longitud", sprintf("%+010.5f", $fields['longitud']), 10).
+        $this->checkExactLength("sentido", sprintf("%03d", $fields['sentido']), 3);
+        $cadena.="1070001100011317F,1192,00,402,90,NULL";
+        $cadena.=(isset($fields['temperatura1']) && $fields['temperatura1']!='0' )?$this->checkExactLength("temperatura1", sprintf("%+03d", $fields['temperatura1'] > 99 ? 99 : $fields['temperatura1']), 3).",":"+99,";
+        $cadena.=(isset($fields['temperatura2']) && $fields['temperatura2']!='0' )?$this->checkExactLength("temperatura2", sprintf("%+03d", $fields['temperatura2'] > 99 ? 99 : $fields['temperatura2']), 3).",":"+99,";
+        $cadena.="NULL,".$this->checkExactLength("evento", sprintf("%02d", $fields['evento']), 2).",NULL,NULL,NULL,NULL;#0000;";
+        $cadena.="#ID=".$fields['movil_id']).";<"
+		
+		return $cadena; 
+     }
     /**
      * Chequea que el valor $field de $name no supere los $length bytes
      *
